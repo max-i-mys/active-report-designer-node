@@ -1,0 +1,18 @@
+{
+	"Name": "Report",
+	"Width": "21cm",
+	"Page": {
+		"PageWidth": "21cm",
+		"PageHeight": "29.7cm",
+		"RightMargin": "1cm",
+		"LeftMargin": "2.5cm",
+		"TopMargin": "1cm",
+		"BottomMargin": "0.5cm",
+		"Columns": 1,
+		"ColumnSpacing": "0in"
+	},
+	"Body": {
+		"Height": "0.875in",
+		"ReportItems": []
+	}
+}

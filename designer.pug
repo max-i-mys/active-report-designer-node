@@ -1,0 +1,274 @@
+doctype html
+html
+	head
+		title #{title}
+		link(rel="stylesheet", href="styles/ar-js-ui.css", type="text/css")
+		link(rel="stylesheet", href="styles/ar-js-designer.css", type="text/css")
+		link(rel="stylesheet", href="styles/ar-js-viewer.css", type="text/css")
+		script(src="scripts/ar-js-core.js")
+		script(src="scripts/ar-js-designer.js")
+		script(src="scripts/ar-js-viewer.js")
+		style.
+			.reportList > li:nth-last-of-type(n + 2) {
+				border-bottom: 1px solid rgba(0, 0, 0, .2);
+			}
+			#reportsModal .sub-folder {
+				border-bottom: none !important;
+			}
+			.reportList li:hover {
+				background-color: #f8f9fa;
+			}
+			.reportList > li {
+				font-size: 20px;
+				padding: 20px 10px;
+				display: block;
+				line-height: 0;
+				transition: 0.3s;
+				cursor: pointer;
+			}
+			#closeBtn, #returnBtn, #agreeBtn, #refuseBtn {
+				color: #fff;
+				border: 1px solid #6c757d;
+				cursor: pointer;
+				border-radius: 5px;
+				outline: none;
+			}
+			#closeBtn, #returnBtn {
+				background-color: #6c757d;
+				padding: 10px 20px;
+				margin: 17px auto 0;
+				display: block;
+			}
+			#agreeBtn, #refuseBtn {
+				display: flex;
+				min-width: 70px;
+				height: 30px;
+				padding: 5px;
+				align-items: center;
+				justify-content: center;
+			}
+			.reportList {
+				margin: 0;
+				padding: 0;
+				border: 1px solid rgba(0, 0, 0, .2);
+				border-radius: 5px;
+				overflow: hidden auto;
+				max-height: 70vh;
+			}
+			.reportList ul {
+				padding: 0;
+			}
+			.reportList ul li {
+				padding: 5px 0 5px 30px;
+				display: inline-block;
+				width: 100%;
+				border-bottom: 1px solid rgba(0, 0, 0, .2);
+				font-size: 20px;
+				position: relative;
+				cursor: pointer;
+			}
+			#agreeBtn {
+				background-color: #149e14;
+				margin-right: 10px;
+			}
+			#refuseBtn {
+				background-color: #b72020;
+			}
+			.modalOverlay {
+				position: fixed;
+				align-items: center;
+				justify-content: center;
+				top: 0;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				background-color: #000000a8;
+			}
+			.modal {
+				width: fit-content;
+				position: relative;
+				background-color: white;
+				border-radius: 5px;
+				border: 1px solid black;
+			}
+			#reportsOverlay, #newReportOverlay {
+				display: none;
+			}
+			.validate {
+				border: 1px solid red!important;
+			}
+	body(style={margin: 0})
+		div(id="designer-host" style={width: "100%", "height": "100vh"})
+		div(id="viewer-host" style={width: "100%", "height": "100vh", display: 'none'})
+		div(id="reportsOverlay", class="modalOverlay")
+			div(id="reportsModal", class="modal", style={"min-width": "400px", "padding": "20px"})
+				h3(style={"margin-top": 0}) Open Report
+				ul(onclick="handleClick(event)", id="list", class="reportList")
+					each folder in reportNames
+						li(data-folder=folder.directory, class=(folder.subDirectories && folder.subDirectories.length) ? 'sub-folder': '')= folder.directory
+						if folder.subDirectories
+							ul
+								each subFolder in folder.subDirectories
+									- const subFolderName = subFolder.directory.replace(`${folder.directory}/`, '')
+									li(data-folder=subFolder.directory)= subFolderName
+				button(id="closeBtn", type="button") Close
+		button(id="returnBtn", type="button", style={
+			"position": "fixed",
+			"left": "5px",
+			"bottom": "10px",
+			"display": "none"
+		}) Edit in Designer
+		div(id="newReportOverlay", class="modalOverlay")
+			div(id="newReportsModal", class="modal", style={"min-width": "280px", "padding": "20px 10px"})
+				div(style={"display": "flex", "justify-content": "center", "margin-bottom": "9px"})
+					input(onfocus="handleInputFocus(event)" placeholder="Report name", name="reportName", type="text", style={ "width": "80%", "height": "22px", "text-align": "center", "outline": "none", border: "1px solid rgba(0, 0, 0, .8)", "border-radius": "3px" })
+				label(style={"display": "flex", "justify-content": "center", "align-items": "center"})
+					With Content directory?
+					input(type="checkbox", checked, name="withContent", style={"margin-left": "7px"})
+				div(style={"display": "flex", "justify-content": "center", "margin-top": "15px"})
+					button(id="agreeBtn", type="button", onclick="handeClickNewReportBtn(event)") Create
+					button(id="refuseBtn", type="button", onclick="handeClickNewReportBtn(event)") Cancel
+		script.
+			let resolveFunc = null;
+			let resolveNewReportFunc = null;
+			let createReportFunc = null;
+			const addedLiTexts = [];
+			const designer = new GC.ActiveReports.ReportDesigner.Designer("#designer-host");
+			const viewer = new ActiveReports.Viewer("#viewer-host");
+			const reportsModal = document.getElementById("reportsOverlay")
+			const newReportModal = document.getElementById("newReportOverlay")
+			const modalBtn = document.getElementById("closeBtn")
+			const designerEl = document.getElementById('designer-host')
+			const viewerEl = document.getElementById('viewer-host')
+			const returnBtn = document.getElementById('returnBtn')
+			const xhr = new XMLHttpRequest();
+			designer.setReport({
+				id: "templates/#{reportName}/template.json",
+				displayName: "#{reportName}"
+			});
+			designer.setActionHandlers({
+					onSave: function (e) {
+						xhr.open("POST", "/templates");
+						xhr.setRequestHeader("Content-Type", "application/json");
+						xhr.send(JSON.stringify(e));
+						return Promise.resolve({displayName: e.displayName});
+					},
+					onCreate: function () {
+						newReportModal.style.display = "flex"
+						return new Promise(function (resolve) {
+							resolveNewReportFunc = resolve
+							createReportFunc = ({reportName, withContent}) => {
+								xhr.open("POST", "/templates");
+								xhr.setRequestHeader("Content-Type", "application/json");
+								xhr.addEventListener("load", function () {
+									const {path, withContent} = JSON.parse(xhr.responseText);
+									if (path) {
+										const newNameReport = path.split('/')[1]
+										resolve({id: `${path}/template.json`, displayName: newNameReport});
+										const parent = document.getElementById("list");
+										if (!addedLiTexts.includes(newNameReport)) {
+											const newLi = document.createElement("li");
+											newLi.textContent = newNameReport;
+											newLi.dataset.folder = newNameReport;
+											if (withContent) newLi.classList.add("sub-folder")
+											parent.appendChild(newLi);
+											addedLiTexts.push(newNameReport);
+											if (withContent) {
+												const newUl = document.createElement("ul");
+												const newLi = document.createElement("li");
+												newLi.textContent = "content";
+												newLi.dataset.folder = `${newNameReport}/content`;
+												newUl.appendChild(newLi);
+												parent.appendChild(newUl);
+											}
+										}
+									}
+								});
+								xhr.send(JSON.stringify({ id: null, withContent, reportName }));
+							}
+						});
+					},
+					onOpen: function () {
+						reportsModal.style.display = "flex"
+						return new Promise(function (resolve) {
+							resolveFunc = resolve;
+						});
+					},
+					onRender: (report) => {
+						designerEl.style.display = 'none'
+						viewerEl.style.display = 'block'
+						returnBtn.style.display = 'block'
+						viewer.open('template', {
+							ResourceLocator: {
+								getResource: (resourceId) => {
+									switch (resourceId) {
+										case "template":
+											return report.definition;
+										default:
+											let reportPath = report.id.split('/')
+											reportPath.splice(1, 1, resourceId)
+											reportPath = reportPath.join('/')
+											return fetch(reportPath).then(response => response.json());
+									}
+								},
+							},
+						});
+						return Promise.resolve();
+					},
+				}
+			)
+			modalBtn.addEventListener("click", () => {
+				reportsModal.style.display = "none"
+			})
+			returnBtn.addEventListener("click", (e) => {
+				designerEl.style.display = 'block'
+				viewerEl.style.display = 'none'
+				e.target.style.display = 'none'
+			})
+			function handleInputFocus(event) {
+				const inputEl = event.target
+				if (inputEl.classList.contains("validate")) {
+					inputEl.classList.remove("validate")
+				}
+			}
+			function handleClick(event) {
+				const repName = event.target.getAttribute('data-folder')
+				if (resolveFunc && repName) {
+					resolveFunc({id: `templates/${repName}/template.json`, displayName: repName});
+					resolveFunc = null;
+					reportsModal.style.display = "none"
+				}
+				event.target.removeEventListener("click", handleClick);
+			}
+			function handeClickNewReportBtn(event) {
+				const value = event.target.textContent
+				let textInputEl
+				const newReportsModalEl = event.target.closest('#newReportsModal');
+				const inputs = newReportsModalEl.querySelectorAll("input");
+				const formData = {};
+				inputs.forEach((input) => {
+					if (input.type === "checkbox") {
+						formData[input.name] = input.checked;
+					} else {
+						formData[input.name] = input.value || null;
+						textInputEl = input
+					}
+				});
+				if (createReportFunc && value !== "Cancel") {
+					const listEl = document.getElementById("list");
+					const liEls = listEl.querySelectorAll(":scope > li");
+					const nameArr = Array.from(liEls).map(el => el.innerText)
+					if(formData.reportName && !nameArr.includes(formData.reportName)){
+						createReportFunc(formData)
+						textInputEl.value = ''
+						newReportModal.style.display = "none"
+						event.target.removeEventListener("click", handeClickNewReportBtn);
+					} else {
+						textInputEl.classList.add('validate')
+					}
+				} else if(value === "Cancel") {
+					textInputEl.value = ''
+					newReportModal.style.display = "none"
+					textInputEl.classList.remove("validate")
+				}
+			}

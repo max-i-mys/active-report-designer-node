@@ -1,0 +1,74 @@
+{
+	"Name": "Report",
+	"Width": "21cm",
+	"Page": {
+		"PageWidth": "21cm",
+		"PageHeight": "29.7cm",
+		"RightMargin": "0cm",
+		"LeftMargin": "0cm",
+		"TopMargin": "0cm",
+		"BottomMargin": "0cm",
+		"Columns": 1,
+		"ColumnSpacing": "0in"
+	},
+	"FixedPage": {
+		"Pages": [
+			{
+				"ReportItems": [
+					{
+						"Type": "subreport",
+						"Name": "Subreport1",
+						"ReportName": "FOLDER/content",
+						"Left": "2.473cm",
+						"Top": "1.344cm",
+						"Width": "17.5cm",
+						"Height": "25.077cm"
+					},
+					{
+						"Type": "textbox",
+						"Name": "TextBox1",
+						"ZIndex": 1,
+						"DataElementName": "TextBox1",
+						"KeepTogether": true,
+						"Value": "=\"Gedruckt am \" & Format(Now(), \"dd.MM.yyyy HH:MM:ss\")",
+						"Style": {
+							"FontSize": "8pt",
+							"FontStyle": "Italic",
+							"PaddingLeft": "2pt",
+							"PaddingRight": "2pt",
+							"PaddingTop": "2pt",
+							"PaddingBottom": "2pt",
+							"VerticalAlign": "Bottom"
+						},
+						"Left": "2.031cm",
+						"Top": "28.475cm",
+						"Width": "8.508cm",
+						"Height": "0.539cm"
+					},
+					{
+						"Type": "textbox",
+						"Name": "TextBox2",
+						"ZIndex": 2,
+						"DataElementName": "TextBox1",
+						"KeepTogether": true,
+						"Value": "=\"Seite \" & Globals!PageNumber & \" von \" & Globals!TotalPages",
+						"Style": {
+							"FontSize": "8pt",
+							"FontStyle": "Italic",
+							"PaddingLeft": "2pt",
+							"PaddingRight": "2pt",
+							"PaddingTop": "2pt",
+							"PaddingBottom": "2pt",
+							"TextAlign": "Right",
+							"VerticalAlign": "Bottom"
+						},
+						"Left": "13.725cm",
+						"Top": "28.475cm",
+						"Width": "6.471cm",
+						"Height": "0.539cm"
+					}
+				]
+			}
+		]
+	}
+}
