@@ -1,1 +1,4 @@
 .idea/
+.gitignore
+.npmignore
+.DS_Store

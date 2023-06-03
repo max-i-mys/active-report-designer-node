@@ -6,10 +6,10 @@ const emptyTemplate = require('./empty-templates/empty-template.json');
 const emptyPageTemplate = require('./empty-templates/empty-page-template.json');
 
 const _runServer = (config = {
-	designerPort: 8686,
-	templatePath: __dirname,
-	licenseKey: '' }) => {
-	const { designerPort, templatePath, licenseKey } = config
+	designerPort,
+	templatePath,
+	licenseKey }) => {
+	const { designerPort = 8686, templatePath = __dirname, licenseKey = '' } = config
 	if(licenseKey) GC.ActiveReports.Core.setLicenseKey(licenseKey)
 	app.set('views', path.join(__dirname));
 	app.set('view engine', 'pug');
